@@ -1,7 +1,30 @@
-window.addEventListener('DOMContentLoaded', async function(event) {
+
+let db = firebase.firestore()
+
+firebase.auth().onAuthStateChanged(async function(user) {
+  if (user) {
+    
+    console.log('signed in')
+   
+    db.collection('users').doc(user.uid).set({
+      name: user.displayName,
+      email: user.email
+    })
+
+       document.querySelector('.sign-in-or-sign-out').innerHTML = `
+       <button class="text-pink-500 underline sign-out">Sign Out</button>
+     `
+     document.querySelector('.sign-out').addEventListener('click', function(event) {
+       console.log('sign out clicked')
+       firebase.auth().signOut()
+       document.location.href = 'movies.html'
+     })
+
+    
+document.querySelector('form').addEventListner('submit', async function(event) {
   let db = firebase.firestore()
-  let apiKey = 'your TMDB API key'
-  let response = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&language=en-US`)
+  let apiKey = '640beb8adcac3f03d848f91a96db7910'
+  let response = await fetch(`https://api.themoviedb.org/3/movie/550?api_key=640beb8adcac3f03d848f91a96db7910`)
   let json = await response.json()
   let movies = json.results
   console.log(movies)
@@ -13,7 +36,25 @@ window.addEventListener('DOMContentLoaded', async function(event) {
     let opacityClass = ''
     if (watchedMovie) {
       opacityClass = 'opacity-20'
+      let docref = await db.collection('watched').where('userId', '==', user.uid).get()
+    }else {
+   
+      console.log('signed out')
+     
+      document.querySelector('form').classList.add('hidden')
+    
+      let ui = new firebaseui.auth.AuthUI(firebase.auth())
+   
+      let authUIConfig = {
+        signInOptions: [
+          firebase.auth.EmailAuthProvider.PROVIDER_ID
+        ],
+        signInSuccessUrl: 'kelloggram.html'
+      }
+      
+      ui.start('.sign-in-or-sign-out', authUIConfig)
     }
+
 
     document.querySelector('.movies').insertAdjacentHTML('beforeend', `
       <div class="w-1/5 p-4 movie-${movie.id} ${opacityClass}">
